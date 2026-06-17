@@ -1,10 +1,29 @@
-<div id="container"></div>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io();
-    socket.on('show_meme', (data) => {
-        const div = document.getElementById('container');
-        div.innerHTML = `<img src="${data.url}" style="max-width:500px;"><p>${data.text}</p>`;
-        setTimeout(() => div.innerHTML = '', 5000); // Мем исчезнет через 5 сек
-    });
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: transparent; overflow: hidden; height: 100vh; display: flex; }
+        #cont { position: absolute; max-width: 50vw; display: flex; flex-direction: column; align-items: center; }
+        .center { top: 25%; left: 25%; }
+        .top { top: 5%; left: 35%; }
+        .bottom { bottom: 5%; left: 35%; }
+        .left { top: 25%; left: 5%; }
+        .right { top: 25%; right: 5%; }
+        img { max-width: 400px; border-radius: 10px; border: 3px solid white; box-shadow: 0 0 20px black; }
+        div { color: white; font-size: 24px; font-weight: bold; margin-top: 10px; text-shadow: 2px 2px 5px black; }
+    </style>
+</head>
+<body>
+    <div id="cont"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const cont = document.getElementById('cont');
+        socket.on('show', (d) => {
+            cont.className = d.pos;
+            cont.innerHTML = `<img src="${d.img}"><div>${d.text}</div>`;
+            setTimeout(() => cont.innerHTML = '', 8000);
+        });
+    </script>
+</body>
+</html>

@@ -1,16 +1,44 @@
-<input type="text" id="pass" placeholder="Пароль">
-<input type="text" id="url" placeholder="Ссылка на картинку">
-<input type="text" id="text" placeholder="Текст мема">
-<button onclick="send()">Отправить</button>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io();
-    function send() {
-        socket.emit('send_meme', {
-            password: document.getElementById('pass').value,
-            url: document.getElementById('url').value,
-            text: document.getElementById('text').value
-        });
-    }
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #121212; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .form { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; }
+        input, select, button { padding: 12px; border-radius: 8px; border: none; }
+        button { background: #6200ea; color: white; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="form">
+        <input type="password" id="pass" placeholder="Пароль">
+        <input type="file" id="file" accept="image/*">
+        <input type="text" id="text" placeholder="Текст (опционально)">
+        <select id="pos">
+            <option value="center">Центр</option>
+            <option value="top">Верх</option>
+            <option value="bottom">Низ</option>
+            <option value="left">Слева</option>
+            <option value="right">Справа</option>
+        </select>
+        <button onclick="send()">Отправить</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        function send() {
+            const file = document.getElementById('file').files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                socket.emit('meme', {
+                    pass: document.getElementById('pass').value,
+                    img: e.target.result,
+                    text: document.getElementById('text').value,
+                    pos: document.getElementById('pos').value
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
