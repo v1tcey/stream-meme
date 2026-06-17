@@ -3,10 +3,10 @@
 <head>
     <style>
         body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; background: transparent; }
-        .meme-box { position: absolute; transition: all 0.5s ease; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        img { max-width: 500px; display: block; }
-        .text { color: white; font-size: 30px; font-weight: bold; text-shadow: 2px 2px 4px black; margin-top: 10px; }
+        .meme-box { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; transition: all 0.3s; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0) translate(-50%, -50%); opacity: 0; } 100% { transform: scale(1) translate(-50%, -50%); opacity: 1; } }
+        img { max-width: 500px; max-height: 500px; border-radius: 15px; }
+        .text { color: white; font-size: 32px; font-weight: 800; text-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-top: 15px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -16,12 +16,11 @@
         const socket = io();
         socket.on('show', (d) => {
             const cont = document.getElementById('cont');
-            cont.innerHTML = `<div class="meme-box" style="left:${d.x}%; top:${d.y}%; transform:translate(-50%, -50%)">
+            cont.innerHTML = `<div class="meme-box" style="left:${d.x}%; top:${d.y}%;">
                                 <img src="${d.img}">
-                                <div class="text">${d.text || ''}</div>
+                                ${d.text ? `<div class="text">${d.text}</div>` : ''}
                               </div>`;
-            if (d.audio) { const a = new Audio(d.audio); a.play(); }
-            setTimeout(() => cont.innerHTML = '', 7000);
+            setTimeout(() => cont.innerHTML = '', 8000);
         });
     </script>
 </body>

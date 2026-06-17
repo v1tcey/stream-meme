@@ -1,29 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Controller</title>
     <style>
-        body { background: #1a1a1a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #canvas { width: 400px; height: 225px; background: #333; border: 2px solid #555; position: relative; cursor: crosshair; }
-        #marker { width: 20px; height: 20px; background: red; position: absolute; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
-        .controls { display: flex; flex-direction: column; gap: 10px; width: 400px; margin-top: 20px; }
+        :root { --primary: #7289da; --bg: #121212; --card: #1e1e1e; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 20px; }
+        #canvas { width: 100%; aspect-ratio: 16/9; background: #000; border: 2px solid #333; position: relative; cursor: crosshair; overflow: hidden; border-radius: 12px; }
+        #img-preview { max-width: 100%; max-height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; opacity: 0.8; }
+        #marker { width: 15px; height: 15px; background: red; position: absolute; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); border: 2px solid white; z-index: 10; }
+        .controls { background: var(--card); padding: 20px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; }
+        input[type="text"], input[type="password"] { padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; }
+        .file-upload { padding: 12px; background: #2a2a2a; border-radius: 8px; text-align: center; cursor: pointer; border: 1px dashed #555; }
+        button { padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #5b6eae; }
     </style>
 </head>
 <body>
-    <h3>Выберите место на экране (1920x1080)</h3>
-    <div id="canvas" onclick="setPos(event)">
-        <div id="marker" style="top:50%; left:50%"></div>
-    </div>
-    <div class="controls">
-        <input type="password" id="pass" placeholder="Пароль">
-        <input type="file" id="imgFile" accept="image/*">
-        <input type="file" id="audioFile" accept="audio/*">
-        <input type="text" id="text" placeholder="Текст (необязательно)">
-        <button onclick="send()">Отправить на стрим</button>
-        <p id="status"></p>
+    <div class="container">
+        <h3>Разместите мем на экране</h3>
+        <div id="canvas" onclick="setPos(event)">
+            <img id="img-preview" src="">
+            <div id="marker" style="top:50%; left:50%"></div>
+        </div>
+        <div class="controls">
+            <input type="password" id="pass" placeholder="Секретный пароль">
+            <label class="file-upload">
+                <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="previewFile()">
+                Выбрать картинку
+            </label>
+            <input type="text" id="text" placeholder="Текст мема">
+            <button onclick="send()">ОТПРАВИТЬ НА СТРИМ</button>
+        </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         let pos = {x: 50, y: 50};
+        const socket = io();
+        function previewFile() {
+            const file = document.getElementById('imgFile').files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => { document.getElementById('img-preview').src = e.target.result; }
+            reader.readAsDataURL(file);
+        }
         function setPos(e) {
             const rect = e.target.getBoundingClientRect();
             pos.x = (e.clientX - rect.left) / rect.width * 100;
@@ -32,21 +53,18 @@
             document.getElementById('marker').style.top = pos.y + '%';
         }
         function send() {
-            const img = document.getElementById('imgFile').files[0];
-            const aud = document.getElementById('audioFile').files[0];
+            const file = document.getElementById('imgFile').files[0];
             const reader = new FileReader();
-            reader.readAsDataURL(img);
             reader.onload = (e) => {
-                const data = { pass: document.getElementById('pass').value, img: e.target.result, text: document.getElementById('text').value, x: pos.x, y: pos.y };
-                if (aud) {
-                    const readerAud = new FileReader();
-                    readerAud.readAsDataURL(aud);
-                    readerAud.onload = (ae) => { data.audio = ae.target.result; socket.emit('meme', data); }
-                } else { socket.emit('meme', data); }
-                document.getElementById('status').innerText = "✅ Отправлено!";
-            }
+                socket.emit('meme', {
+                    pass: document.getElementById('pass').value,
+                    img: e.target.result,
+                    text: document.getElementById('text').value,
+                    x: pos.x, y: pos.y
+                });
+            };
+            reader.readAsDataURL(file);
         }
-        const socket = io();
     </script>
 </body>
 </html>
