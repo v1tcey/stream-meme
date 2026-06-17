@@ -1,0 +1,10 @@
+<div id="container"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    socket.on('show_meme', (data) => {
+        const div = document.getElementById('container');
+        div.innerHTML = `<img src="${data.url}" style="max-width:500px;"><p>${data.text}</p>`;
+        setTimeout(() => div.innerHTML = '', 5000); // Мем исчезнет через 5 сек
+    });
+</script>

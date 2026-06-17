@@ -1,0 +1,16 @@
+<input type="text" id="pass" placeholder="Пароль">
+<input type="text" id="url" placeholder="Ссылка на картинку">
+<input type="text" id="text" placeholder="Текст мема">
+<button onclick="send()">Отправить</button>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    function send() {
+        socket.emit('send_meme', {
+            password: document.getElementById('pass').value,
+            url: document.getElementById('url').value,
+            text: document.getElementById('text').value
+        });
+    }
+</script>
