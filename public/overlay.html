@@ -3,10 +3,8 @@
 <head>
     <style>
         body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; background: transparent; }
-        .meme-box { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; transition: all 0.3s; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popIn { 0% { transform: scale(0) translate(-50%, -50%); opacity: 0; } 100% { transform: scale(1) translate(-50%, -50%); opacity: 1; } }
-        img { max-width: 500px; max-height: 500px; border-radius: 15px; }
-        .text { color: white; font-size: 32px; font-weight: 800; text-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-top: 15px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; }
+        .meme-box { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; animation: popIn 0.5s; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.5) translate(-100%, -100%); } 100% { opacity: 1; transform: scale(1) translate(-50%, -50%); } }
     </style>
 </head>
 <body>
@@ -17,8 +15,8 @@
         socket.on('show', (d) => {
             const cont = document.getElementById('cont');
             cont.innerHTML = `<div class="meme-box" style="left:${d.x}%; top:${d.y}%;">
-                                <img src="${d.img}">
-                                ${d.text ? `<div class="text">${d.text}</div>` : ''}
+                                <img src="${d.img}" style="max-width:${d.size}px; border-radius:10px;">
+                                <div style="color:white; font-size:24px; font-weight:bold; margin-top:10px; text-shadow:0 2px 5px black;">${d.text}</div>
                               </div>`;
             setTimeout(() => cont.innerHTML = '', 8000);
         });

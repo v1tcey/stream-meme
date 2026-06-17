@@ -3,54 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meme Controller</title>
+    <title>Meme Stream Controller</title>
     <style>
-        :root { --primary: #7289da; --bg: #121212; --card: #1e1e1e; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 20px; }
-        #canvas { width: 100%; aspect-ratio: 16/9; background: #000; border: 2px solid #333; position: relative; cursor: crosshair; overflow: hidden; border-radius: 12px; }
-        #img-preview { max-width: 100%; max-height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; opacity: 0.8; }
-        #marker { width: 15px; height: 15px; background: red; position: absolute; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); border: 2px solid white; z-index: 10; }
-        .controls { background: var(--card); padding: 20px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; }
-        input[type="text"], input[type="password"] { padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; }
-        .file-upload { padding: 12px; background: #2a2a2a; border-radius: 8px; text-align: center; cursor: pointer; border: 1px dashed #555; }
-        button { padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #5b6eae; }
+        :root { --bg: #0f0f0f; --accent: #6200ea; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #canvas { width: 640px; height: 360px; background: url('bg.png') center/cover; border: 2px solid #333; position: relative; cursor: crosshair; overflow: hidden; border-radius: 8px; }
+        .forbidden { position: absolute; background: rgba(255, 0, 0, 0.3); pointer-events: none; border: 1px dashed red; }
+        #preview { position: absolute; max-width: 100px; transform: translate(-50%, -50%); display: none; }
+        .controls { width: 640px; margin-top: 20px; display: grid; gap: 15px; }
+        input, button { padding: 12px; border-radius: 8px; border: none; background: #222; color: white; }
+        button { background: var(--accent); font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h3>Разместите мем на экране</h3>
-        <div id="canvas" onclick="setPos(event)">
-            <img id="img-preview" src="">
-            <div id="marker" style="top:50%; left:50%"></div>
-        </div>
-        <div class="controls">
-            <input type="password" id="pass" placeholder="Секретный пароль">
-            <label class="file-upload">
-                <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="previewFile()">
-                Выбрать картинку
-            </label>
-            <input type="text" id="text" placeholder="Текст мема">
-            <button onclick="send()">ОТПРАВИТЬ НА СТРИМ</button>
-        </div>
+    <h3>Настройка позиции мема</h3>
+    <div id="canvas" onclick="setPos(event)">
+        <div class="forbidden" style="right:0; top:0; width:25%; height:100%"></div> <!-- Зона справа -->
+        <div class="forbidden" style="left:40%; top:35%; width:20%; height:30%"></div> <!-- Зона центр -->
+        <img id="preview" src="">
+    </div>
+    <div class="controls">
+        <input type="password" id="pass" placeholder="Секретный пароль">
+        <input type="file" id="imgFile" accept="image/*" onchange="updatePreview()">
+        <label>Размер: <input type="range" id="size" min="100" max="800" value="300"></label>
+        <input type="text" id="text" placeholder="Текст (опционально)">
+        <button onclick="send()">ОТПРАВИТЬ НА СТРИМ</button>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         let pos = {x: 50, y: 50};
         const socket = io();
-        function previewFile() {
+        function updatePreview() {
             const file = document.getElementById('imgFile').files[0];
             const reader = new FileReader();
-            reader.onload = (e) => { document.getElementById('img-preview').src = e.target.result; }
+            reader.onload = (e) => {
+                const img = document.getElementById('preview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
             reader.readAsDataURL(file);
         }
         function setPos(e) {
             const rect = e.target.getBoundingClientRect();
-            pos.x = (e.clientX - rect.left) / rect.width * 100;
-            pos.y = (e.clientY - rect.top) / rect.height * 100;
-            document.getElementById('marker').style.left = pos.x + '%';
-            document.getElementById('marker').style.top = pos.y + '%';
+            const x = (e.clientX - rect.left) / rect.width * 100;
+            const y = (e.clientY - rect.top) / rect.height * 100;
+            // Проверка зон (Справа > 75%, Центр 40-60% x и 35-65% y)
+            if (x > 75 || (x > 40 && x < 60 && y > 35 && y < 65)) return;
+            pos = {x, y};
+            const p = document.getElementById('preview');
+            p.style.left = x + '%'; p.style.top = y + '%';
         }
         function send() {
             const file = document.getElementById('imgFile').files[0];
@@ -60,7 +61,8 @@
                     pass: document.getElementById('pass').value,
                     img: e.target.result,
                     text: document.getElementById('text').value,
-                    x: pos.x, y: pos.y
+                    x: pos.x, y: pos.y,
+                    size: document.getElementById('size').value
                 });
             };
             reader.readAsDataURL(file);
