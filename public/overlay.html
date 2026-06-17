@@ -2,15 +2,11 @@
 <html>
 <head>
     <style>
-        body { margin: 0; padding: 0; background: transparent; overflow: hidden; height: 100vh; display: flex; }
-        #cont { position: absolute; max-width: 50vw; display: flex; flex-direction: column; align-items: center; }
-        .center { top: 25%; left: 25%; }
-        .top { top: 5%; left: 35%; }
-        .bottom { bottom: 5%; left: 35%; }
-        .left { top: 25%; left: 5%; }
-        .right { top: 25%; right: 5%; }
-        img { max-width: 400px; border-radius: 10px; border: 3px solid white; box-shadow: 0 0 20px black; }
-        div { color: white; font-size: 24px; font-weight: bold; margin-top: 10px; text-shadow: 2px 2px 5px black; }
+        body { margin: 0; overflow: hidden; height: 100vh; width: 100vw; background: transparent; }
+        .meme-box { position: absolute; transition: all 0.5s ease; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        img { max-width: 500px; display: block; }
+        .text { color: white; font-size: 30px; font-weight: bold; text-shadow: 2px 2px 4px black; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -18,11 +14,14 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const cont = document.getElementById('cont');
         socket.on('show', (d) => {
-            cont.className = d.pos;
-            cont.innerHTML = `<img src="${d.img}"><div>${d.text}</div>`;
-            setTimeout(() => cont.innerHTML = '', 8000);
+            const cont = document.getElementById('cont');
+            cont.innerHTML = `<div class="meme-box" style="left:${d.x}%; top:${d.y}%; transform:translate(-50%, -50%)">
+                                <img src="${d.img}">
+                                <div class="text">${d.text || ''}</div>
+                              </div>`;
+            if (d.audio) { const a = new Audio(d.audio); a.play(); }
+            setTimeout(() => cont.innerHTML = '', 7000);
         });
     </script>
 </body>

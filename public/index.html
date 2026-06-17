@@ -1,44 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #121212; color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .form { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; }
-        input, select, button { padding: 12px; border-radius: 8px; border: none; }
-        button { background: #6200ea; color: white; cursor: pointer; font-weight: bold; }
+        body { background: #1a1a1a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #canvas { width: 400px; height: 225px; background: #333; border: 2px solid #555; position: relative; cursor: crosshair; }
+        #marker { width: 20px; height: 20px; background: red; position: absolute; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
+        .controls { display: flex; flex-direction: column; gap: 10px; width: 400px; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="form">
+    <h3>Выберите место на экране (1920x1080)</h3>
+    <div id="canvas" onclick="setPos(event)">
+        <div id="marker" style="top:50%; left:50%"></div>
+    </div>
+    <div class="controls">
         <input type="password" id="pass" placeholder="Пароль">
-        <input type="file" id="file" accept="image/*">
-        <input type="text" id="text" placeholder="Текст (опционально)">
-        <select id="pos">
-            <option value="center">Центр</option>
-            <option value="top">Верх</option>
-            <option value="bottom">Низ</option>
-            <option value="left">Слева</option>
-            <option value="right">Справа</option>
-        </select>
-        <button onclick="send()">Отправить</button>
+        <input type="file" id="imgFile" accept="image/*">
+        <input type="file" id="audioFile" accept="audio/*">
+        <input type="text" id="text" placeholder="Текст (необязательно)">
+        <button onclick="send()">Отправить на стрим</button>
+        <p id="status"></p>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-        function send() {
-            const file = document.getElementById('file').files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                socket.emit('meme', {
-                    pass: document.getElementById('pass').value,
-                    img: e.target.result,
-                    text: document.getElementById('text').value,
-                    pos: document.getElementById('pos').value
-                });
-            };
-            reader.readAsDataURL(file);
+        let pos = {x: 50, y: 50};
+        function setPos(e) {
+            const rect = e.target.getBoundingClientRect();
+            pos.x = (e.clientX - rect.left) / rect.width * 100;
+            pos.y = (e.clientY - rect.top) / rect.height * 100;
+            document.getElementById('marker').style.left = pos.x + '%';
+            document.getElementById('marker').style.top = pos.y + '%';
         }
+        function send() {
+            const img = document.getElementById('imgFile').files[0];
+            const aud = document.getElementById('audioFile').files[0];
+            const reader = new FileReader();
+            reader.readAsDataURL(img);
+            reader.onload = (e) => {
+                const data = { pass: document.getElementById('pass').value, img: e.target.result, text: document.getElementById('text').value, x: pos.x, y: pos.y };
+                if (aud) {
+                    const readerAud = new FileReader();
+                    readerAud.readAsDataURL(aud);
+                    readerAud.onload = (ae) => { data.audio = ae.target.result; socket.emit('meme', data); }
+                } else { socket.emit('meme', data); }
+                document.getElementById('status').innerText = "✅ Отправлено!";
+            }
+        }
+        const socket = io();
     </script>
 </body>
 </html>
