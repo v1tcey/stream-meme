@@ -2,70 +2,63 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meme Stream Controller</title>
     <style>
-        :root { --bg: #0f0f0f; --accent: #6200ea; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #canvas { width: 640px; height: 360px; background: url('bg.png') center/cover; border: 2px solid #333; position: relative; cursor: crosshair; overflow: hidden; border-radius: 8px; }
-        .forbidden { position: absolute; background: rgba(255, 0, 0, 0.3); pointer-events: none; border: 1px dashed red; }
-        #preview { position: absolute; max-width: 100px; transform: translate(-50%, -50%); display: none; }
-        .controls { width: 640px; margin-top: 20px; display: grid; gap: 15px; }
-        input, button { padding: 12px; border-radius: 8px; border: none; background: #222; color: white; }
-        button { background: var(--accent); font-weight: bold; cursor: pointer; }
+        :root { --glass: rgba(255,255,255,0.05); --accent: #8b5cf6; }
+        body { background: #0a0a0a; color: #eee; font-family: 'Inter', sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .panel { width: 100%; max-width: 600px; background: #151515; padding: 25px; border-radius: 20px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #canvas { width: 100%; aspect-ratio: 16/9; background: url('bg.png') center/cover; border-radius: 12px; position: relative; cursor: crosshair; overflow: hidden; border: 1px solid #444; }
+        .forbidden { position: absolute; background: rgba(255,0,0,0.15); backdrop-filter: blur(2px); pointer-events: none; border: 1px dashed red; }
+        #preview { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+        .controls { display: grid; gap: 15px; margin-top: 20px; }
+        input { padding: 12px; border-radius: 10px; border: 1px solid #444; background: #222; color: white; width: 100%; box-sizing: border-box; }
+        button { padding: 15px; background: var(--accent); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #7c3aed; }
+        .lbl { font-size: 12px; color: #888; }
     </style>
 </head>
 <body>
-    <h3>Настройка позиции мема</h3>
-    <div id="canvas" onclick="setPos(event)">
-        <div class="forbidden" style="right:0; top:0; width:25%; height:100%"></div> <!-- Зона справа -->
-        <div class="forbidden" style="left:40%; top:35%; width:20%; height:30%"></div> <!-- Зона центр -->
-        <img id="preview" src="">
-    </div>
-    <div class="controls">
-        <input type="password" id="pass" placeholder="Секретный пароль">
-        <input type="file" id="imgFile" accept="image/*" onchange="updatePreview()">
-        <label>Размер: <input type="range" id="size" min="100" max="800" value="300"></label>
-        <input type="text" id="text" placeholder="Текст (опционально)">
-        <button onclick="send()">ОТПРАВИТЬ НА СТРИМ</button>
+    <div class="panel">
+        <div id="canvas" onclick="setPos(event)">
+            <div class="forbidden" style="right:0; top:0; width:25%; height:100%"></div>
+            <div class="forbidden" style="left:40%; top:35%; width:20%; height:30%"></div>
+            <div id="preview" style="display:none">
+                <img id="p-img" src="" style="width:100px; border-radius:8px;">
+                <div id="p-text" style="font-weight:bold; text-shadow:0 0 5px black; margin-top:5px;"></div>
+            </div>
+        </div>
+        <div class="controls">
+            <input type="password" id="pass" placeholder="Секретный пароль">
+            <input type="file" id="file" onchange="upd()">
+            <div class="lbl">Размер мема:</div>
+            <input type="range" id="size" min="50" max="600" value="200" oninput="upd()">
+            <input type="text" id="text" maxlength="18" placeholder="Текст (макс 18)" oninput="upd()">
+            <button onclick="send()">ЗАПУСТИТЬ НА ЭКРАН</button>
+        </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        let pos = {x: 50, y: 50};
-        const socket = io();
-        function updatePreview() {
-            const file = document.getElementById('imgFile').files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.getElementById('preview');
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+        let pos = {x: 50, y: 50}; const socket = io();
+        function upd() {
+            const f = document.getElementById('file').files[0];
+            const p = document.getElementById('preview');
+            const pImg = document.getElementById('p-img');
+            if(f) { const r = new FileReader(); r.onload = (e) => { pImg.src = e.target.result; p.style.display = 'flex'; }; r.readAsDataURL(f); }
+            pImg.style.width = document.getElementById('size').value + 'px';
+            document.getElementById('p-text').innerText = document.getElementById('text').value;
         }
         function setPos(e) {
             const rect = e.target.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width * 100;
             const y = (e.clientY - rect.top) / rect.height * 100;
-            // Проверка зон (Справа > 75%, Центр 40-60% x и 35-65% y)
             if (x > 75 || (x > 40 && x < 60 && y > 35 && y < 65)) return;
             pos = {x, y};
             const p = document.getElementById('preview');
             p.style.left = x + '%'; p.style.top = y + '%';
         }
         function send() {
-            const file = document.getElementById('imgFile').files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                socket.emit('meme', {
-                    pass: document.getElementById('pass').value,
-                    img: e.target.result,
-                    text: document.getElementById('text').value,
-                    x: pos.x, y: pos.y,
-                    size: document.getElementById('size').value
-                });
-            };
-            reader.readAsDataURL(file);
+            const r = new FileReader();
+            r.onload = (e) => socket.emit('meme', { pass: document.getElementById('pass').value, img: e.target.result, text: document.getElementById('text').value, x: pos.x, y: pos.y, size: document.getElementById('size').value });
+            r.readAsDataURL(document.getElementById('file').files[0]);
         }
     </script>
 </body>
